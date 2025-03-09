@@ -110,7 +110,7 @@ input.oninput = function () {
   if (theWord.innerHTML.toLowerCase() === this.value.toLowerCase()) {
     // Correct word typed
     clearInterval(gameInterval);
-    showFeedback("أحسنت"); // Good job!
+    showFeedback("Good Jop"); // Good job!
     input.value = "";
     scoreGot.innerHTML = parseInt(scoreGot.innerHTML) + 1;
 
