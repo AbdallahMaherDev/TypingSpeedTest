@@ -31,7 +31,6 @@ const words = [
   "Playing",
 ];
 
-// Setting Levels
 const lvls = {
   Easy: 10,
   Normal: 7,
@@ -60,7 +59,7 @@ let defaultLevelSeconds = lvls[defaultLevelName];
 let timeLeft = defaultLevelSeconds;
 let gameInterval;
 let gameActive = false;
-let wordsList = [...words]; // Create a copy of the original array
+let wordsList = [...words];
 
 // Initialize UI
 lvlNameSpan.innerHTML = defaultLevelName;
@@ -71,8 +70,6 @@ scoreTotal.innerHTML = words.length;
 // Update Level When Changed
 levelSelect.onchange = function () {
   if (gameActive) {
-    // If game is active, don't allow changing level
-    // Revert to current level
     levelSelect.value = defaultLevelName;
     return;
   }
@@ -85,37 +82,33 @@ levelSelect.onchange = function () {
   timeLeft = defaultLevelSeconds;
 };
 
-// Prevent paste in input field
-input.onpaste = function () {
-  return false;
-};
+input.onpaste = () => false;
 
-// Start game button click handler
 startButton.onclick = function () {
   this.remove();
   input.focus();
   gameActive = true;
-
-  // Disable level selection during the game
   levelSelect.disabled = true;
   levelSelect.classList.add("disabled");
-
   generateWords();
 };
 
-// Handle Input for Real-Time Word Checking
 input.oninput = function () {
   if (!gameActive) return;
 
   if (theWord.innerHTML.toLowerCase() === this.value.toLowerCase()) {
-    // Correct word typed
     clearInterval(gameInterval);
-    showFeedback("Good Jop"); // Good job!
+    showFeedback("Good jop");
     input.value = "";
     scoreGot.innerHTML = parseInt(scoreGot.innerHTML) + 1;
 
+    // Reset progress bar immediately when word is correct
+    progressBar.style.width = "100%";
+    progressBar.style.transition = "none";
+    void progressBar.offsetWidth; // Force reflow
+
     if (wordsList.length > 0) {
-      setTimeout(generateWords, 500); // Delay before next word
+      setTimeout(generateWords, 500);
     } else {
       endGame(true);
     }
@@ -129,30 +122,23 @@ function generateWords() {
   }
 
   let randomWord = wordsList[Math.floor(Math.random() * wordsList.length)];
-  let wordIndex = wordsList.indexOf(randomWord);
-  wordsList.splice(wordIndex, 1);
+  wordsList.splice(wordsList.indexOf(randomWord), 1);
 
   theWord.innerHTML = randomWord;
 
-  // Update upcoming words display
   upcomingWords.innerHTML = "";
-  for (let i = 0; i < Math.min(wordsList.length, 7); i++) {
+  wordsList.slice(0, 7).forEach((word) => {
     let div = document.createElement("div");
-    let text = document.createTextNode(wordsList[i]);
-    div.appendChild(text);
+    div.textContent = word;
     upcomingWords.appendChild(div);
-  }
+  });
 
-  // Reset timer
+  // Reset progress bar with new transition
   timeLeft = defaultLevelSeconds;
   timeLeftSpan.innerHTML = timeLeft;
-
-  // Reset progress bar
   progressBar.style.width = "100%";
   progressBar.style.transition = `width ${defaultLevelSeconds}s linear`;
-
-  // Force reflow to ensure transition applies correctly
-  void progressBar.offsetWidth;
+  void progressBar.offsetWidth; // Force reflow
 
   startPlay();
 }
@@ -165,22 +151,17 @@ function startPlay() {
     timeLeft--;
     timeLeftSpan.innerHTML = timeLeft;
 
-    if (timeLeft === 0) {
+    if (timeLeft <= 0) {
       clearInterval(gameInterval);
-      if (gameActive) {
-        endGame(false);
-      }
+      if (gameActive) endGame(false);
     }
   }, 1000);
 }
 
 function showFeedback(message) {
-  feedback.innerHTML = message;
+  feedback.textContent = message;
   feedback.classList.remove("show");
-
-  // Force reflow to restart animation
   void feedback.offsetWidth;
-
   feedback.classList.add("show");
 }
 
@@ -188,49 +169,41 @@ function endGame(isWin) {
   gameActive = false;
   clearInterval(gameInterval);
 
-  // Enable level selection again
+  // Reset progress bar on game end
+  progressBar.style.width = "100%";
+  progressBar.style.transition = "none";
+
   levelSelect.disabled = false;
   levelSelect.classList.remove("disabled");
 
-  finishMessage.innerHTML = "";
-  let span = document.createElement("span");
+  finishMessage.innerHTML = isWin
+    ? '<span class="good">Congratulations! You Won!</span>'
+    : '<span class="bad">Game Over</span>';
 
-  if (isWin) {
-    span.className = "good";
-    let text = document.createTextNode("Congratulations! You Won!");
-    span.appendChild(text);
-  } else {
-    span.className = "bad";
-    let text = document.createTextNode("Game Over");
-    span.appendChild(text);
-  }
-
-  finishMessage.appendChild(span);
   restartButton.style.display = "block";
 }
 
 restartButton.onclick = function () {
-  // Reset game state
   wordsList = [...words];
   finishMessage.innerHTML = "";
   scoreGot.innerHTML = "0";
   gameActive = false;
 
-  // Reset UI
+  // Reset progress bar on restart
+  progressBar.style.width = "100%";
+  progressBar.style.transition = "none";
+
   restartButton.style.display = "none";
   upcomingWords.innerHTML = "Words Will Show Here";
   theWord.innerHTML = "";
   input.value = "";
 
-  // Add start button back
   let newStartButton = document.createElement("div");
   newStartButton.className = "start";
-  newStartButton.innerHTML = "Start Playing";
+  newStartButton.textContent = "Start Playing";
   newStartButton.onclick = startButton.onclick;
 
   document
     .querySelector(".container")
     .insertBefore(newStartButton, document.querySelector(".the-word"));
-
-  startButton = newStartButton;
 };
